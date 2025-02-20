@@ -1,8 +1,25 @@
-import { useContext } from 'react';
-import { AuthContext } from '../Providers/AuthProvider';
+import { useState } from 'react';
 
 const TaskBoard = () => {
-  const { user } = useContext(AuthContext);
+  const [tasks, setTasks] = useState({
+    todo: [],
+    inProgress: [],
+    done: [],
+  });
+
+  const [taskInput, setTaskInput] = useState('');
+
+  // Handle adding a task
+  const addTask = () => {
+    if (taskInput) {
+      setTasks(prevState => ({
+        ...prevState,
+        todo: [...prevState.todo, taskInput],
+      }));
+
+      setTaskInput('');
+    }
+  };
 
   return (
     <div className="bgColor flex flex-col items-center min-h-screen p-6">
@@ -12,9 +29,22 @@ const TaskBoard = () => {
       </h1>
 
       {/* Task Add Section */}
-      <div className="row">
-        <input type="text" id="input-box" placeholder="Add your task"></input>
-        <button className="button">Add</button>
+      <div className="row mb-6">
+        <input
+          type="text"
+          id="input-box"
+          name="task"
+          placeholder="Add your task"
+          className="p-2 border rounded"
+          value={taskInput} // Bind the value to the state
+          onChange={e => setTaskInput(e.target.value)} // Update the state on input change
+        />
+        <button
+          onClick={addTask}
+          className="button ml-4 p-2 bg-blue-500 text-white rounded"
+        >
+          Add
+        </button>
       </div>
 
       {/* Task Columns */}
@@ -22,7 +52,13 @@ const TaskBoard = () => {
         {/* To-Do Column */}
         <div className="bg-[#edeef0] p-4 rounded-lg shadow-lg w-full">
           <h2 className="text-lg font-semibold text-center mb-2">To-Do</h2>
-          <div className="min-h-[300px] border-2 border-blue-700 border-dashed p-2 rounded-lg"></div>
+          <div className="min-h-[300px] border-2 border-blue-700 border-dashed p-2 rounded-lg">
+            {tasks.todo.map((task, index) => (
+              <div key={index} className="p-2 mb-2 bg-white rounded shadow">
+                {task}
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* In Progress Column */}
@@ -30,13 +66,25 @@ const TaskBoard = () => {
           <h2 className="text-lg font-semibold text-center mb-2">
             In Progress
           </h2>
-          <div className="min-h-[300px] border-2 border-purple-700 border-dashed p-2 rounded-lg"></div>
+          <div className="min-h-[300px] border-2 border-purple-700 border-dashed p-2 rounded-lg">
+            {tasks.inProgress.map((task, index) => (
+              <div key={index} className="p-2 mb-2 bg-white rounded shadow">
+                {task}
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Done Column */}
         <div className="bg-[#edeef0] p-4 rounded-lg shadow-lg w-full">
           <h2 className="text-lg font-semibold text-center mb-2">Done</h2>
-          <div className="min-h-[300px] border-2 border-blue-700 border-dashed p-2 rounded-lg"></div>
+          <div className="min-h-[300px] border-2 border-blue-700 border-dashed p-2 rounded-lg">
+            {tasks.done.map((task, index) => (
+              <div key={index} className="p-2 mb-2 bg-white rounded shadow">
+                {task}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
