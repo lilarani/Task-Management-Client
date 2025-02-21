@@ -17,12 +17,13 @@ const router = createBrowserRouter([
     children: [
       {
         path: '/',
-        element: <Home></Home>,
+        element: (
+          <PrivetRoute>
+            <Home></Home>
+          </PrivetRoute>
+        ),
       },
-      {
-        path: '/sign-in',
-        element: <SignIn></SignIn>,
-      },
+
       {
         path: '/Task',
         element: (
@@ -30,6 +31,10 @@ const router = createBrowserRouter([
             <TaskBoard></TaskBoard>
           </PrivetRoute>
         ),
+      },
+      {
+        path: '/sign-in',
+        element: <SignIn></SignIn>,
       },
     ],
   },

@@ -75,17 +75,14 @@ const TaskBoard = () => {
 
     // Update the backend
     try {
-      await fetch(
-        `${import.meta.env.VITE_SERVER_URL}/task/reorder/${draggableId}`,
-        {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            category: draggedTask.category,
-            index: destination.index,
-          }),
-        }
-      );
+      await fetch(`http://localhost:5000/task/reorder/${draggableId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          category: draggedTask.category,
+          index: destination.index,
+        }),
+      });
     } catch (error) {
       console.error('Error updating task:', error);
       // Revert the local state change if the server update fails
@@ -121,7 +118,7 @@ const TaskBoard = () => {
   // Delete Task
   const handleDeleteTask = async taskId => {
     try {
-      await fetch(`${import.meta.env.VITE_SERVER_URL}/task/${taskId}`, {
+      await fetch(`http://localhost:5000/task/${taskId}`, {
         method: 'DELETE',
       });
       setTasks(tasks.filter(task => task._id !== taskId));
@@ -141,7 +138,7 @@ const TaskBoard = () => {
     const { _id, ...taskToUpdate } = updatedTask;
 
     try {
-      await fetch(`${import.meta.env.VITE_SERVER_URL}/task/${taskId}`, {
+      await fetch(`http://localhost:5000/task/${taskId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(taskToUpdate),
@@ -163,14 +160,14 @@ const TaskBoard = () => {
   return (
     <div className="container mx-auto p-5">
       {/* Task Input Form */}
-      <div className="mb-5 flex flex-wrap gap-3">
+      <div className="mb-5 flex flex-wrap gap-3 w-4/5 mx-auto">
         <input
           type="text"
           name="title"
           placeholder="Task Title"
           value={newTask.title}
           onChange={handleInputChange}
-          className="p-2 border rounded-md"
+          className="p-2  rounded-md border-orange-600 border-2"
         />
         <input
           type="text"
@@ -180,24 +177,26 @@ const TaskBoard = () => {
           onChange={handleInputChange}
           className="p-2 border rounded-md"
         />
-        <select
-          name="category"
-          value={newTask.category}
-          onChange={handleInputChange}
-          className="p-2 border rounded-md"
-        >
-          {categories.map(cat => (
-            <option key={cat} value={cat}>
-              {cat}
-            </option>
-          ))}
-        </select>
-        <button
-          onClick={handleAddTask}
-          className="bg-blue-500 text-white px-4 py-2 rounded-md"
-        >
-          Add Task
-        </button>
+        <div className="flex gap-3">
+          <select
+            name="category"
+            value={newTask.category}
+            onChange={handleInputChange}
+            className="p-2 border rounded-md"
+          >
+            {categories.map(cat => (
+              <option key={cat} value={cat}>
+                {cat}
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={handleAddTask}
+            className="bg-[#ff5945] text-[#fff]  px-4 py-2 rounded-md"
+          >
+            Add Task
+          </button>
+        </div>
       </div>
 
       {/* Drag & Drop Task Board */}
@@ -209,7 +208,7 @@ const TaskBoard = () => {
                 <div
                   ref={provided.innerRef}
                   {...provided.droppableProps}
-                  className="p-4 border rounded-md shadow-md bg-gray-100 min-h-[300px]"
+                  className="p-4 border rounded-md shadow-md  min-h-[300px]"
                 >
                   <h2 className="text-lg font-semibold mb-2">{category}</h2>
                   {tasks
@@ -225,7 +224,7 @@ const TaskBoard = () => {
                             ref={provided.innerRef}
                             {...provided.draggableProps}
                             {...provided.dragHandleProps}
-                            className="bg-white p-3 mb-2 shadow-md rounded-md flex justify-between items-center"
+                            className=" p-3 mb-2 shadow-md rounded-md flex justify-between items-center"
                           >
                             {/* Task Details */}
                             {editingTask?._id === task._id ? (
@@ -269,7 +268,7 @@ const TaskBoard = () => {
                             <div className="flex gap-2">
                               {editingTask?._id === task._id ? (
                                 <FiCheck
-                                  className="cursor-pointer text-green-500"
+                                  className="cursor-pointer text-green-500 text-2xl"
                                   onClick={() =>
                                     handleSaveTask(task._id, editingTask)
                                   }

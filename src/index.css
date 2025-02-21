@@ -36,15 +36,14 @@ input {
   border-radius: 40px;
 }
 
-/* theme controller */
 body.light {
   background-color: white;
   color: black;
 }
 
 body.dark {
-  background: linear-gradient(135deg, #153677, #4e085f);
-  color: #fff;
+  background-color: #121212;
+  color: #d1d5db;
 }
 
 .nav {
