@@ -8,6 +8,7 @@ import SignIn from './pages/SignIn.jsx';
 import AuthProvider from './Providers/AuthProvider.jsx';
 import TaskBoard from './pages/TaskBoard.jsx';
 import PrivetRoute from './routers/PrivetRoute.jsx';
+import Home from './pages/Home.jsx';
 
 const router = createBrowserRouter([
   {
@@ -16,15 +17,19 @@ const router = createBrowserRouter([
     children: [
       {
         path: '/',
+        element: <Home></Home>,
+      },
+      {
+        path: '/sign-in',
+        element: <SignIn></SignIn>,
+      },
+      {
+        path: '/Task',
         element: (
           <PrivetRoute>
             <TaskBoard></TaskBoard>
           </PrivetRoute>
         ),
-      },
-      {
-        path: '/sign-in',
-        element: <SignIn></SignIn>,
       },
     ],
   },

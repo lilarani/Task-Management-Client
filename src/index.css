@@ -35,3 +35,18 @@ input {
   cursor: pointer;
   border-radius: 40px;
 }
+
+/* theme controller */
+body.light {
+  background-color: white;
+  color: black;
+}
+
+body.dark {
+  background: linear-gradient(135deg, #153677, #4e085f);
+  color: #fff;
+}
+
+.nav {
+  box-shadow: 0 4px 6px rgba(128, 128, 128, 0.3);
+}

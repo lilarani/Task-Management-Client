@@ -1,92 +1,304 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import { FiEdit, FiTrash2, FiCheck } from 'react-icons/fi';
 
+const categories = ['To-Do', 'In Progress', 'Done'];
 const TaskBoard = () => {
-  const [tasks, setTasks] = useState({
-    todo: [],
-    inProgress: [],
-    done: [],
+  const [tasks, setTasks] = useState([]);
+  const [newTask, setNewTask] = useState({
+    title: '',
+    description: '',
+    category: 'To-Do',
   });
+  const [editingTask, setEditingTask] = useState(null);
 
-  const [taskInput, setTaskInput] = useState('');
+  // Fetch tasks from server
+  const fetchTasks = useCallback(async () => {
+    try {
+      const response = await fetch(`http://localhost:5000/task`);
+      const data = await response.json();
+      if (Array.isArray(data)) {
+        setTasks(data);
+      } else {
+        console.error('Expected array but got:', data);
+        setTasks([]);
+      }
+    } catch (error) {
+      console.error('Error fetching tasks:', error);
+      setTasks([]);
+    }
+  }, []);
 
-  // Handle adding a task
-  const addTask = () => {
-    if (taskInput) {
-      setTasks(prevState => ({
-        ...prevState,
-        todo: [...prevState.todo, taskInput],
-      }));
+  useEffect(() => {
+    fetchTasks();
+  }, [fetchTasks]);
 
-      setTaskInput('');
+  // Handle Drag & Drop
+  const handleDragEnd = async result => {
+    const { source, destination, draggableId } = result;
+
+    // If the task is dropped outside or no destination is found
+    if (!destination) return;
+
+    // If the task hasn't moved, do nothing
+    if (
+      source.droppableId === destination.droppableId &&
+      source.index === destination.index
+    ) {
+      return;
+    }
+
+    // Create a new array of tasks
+    const newTasks = Array.from(tasks);
+
+    // Find the task that was dragged
+    const draggedTask = newTasks.find(task => task._id === draggableId);
+
+    if (!draggedTask) {
+      console.error('Dragged task not found');
+      return;
+    }
+
+    // Remove the task from its original position
+    newTasks.splice(newTasks.indexOf(draggedTask), 1);
+
+    // Update the task's category if it has changed
+    if (source.droppableId !== destination.droppableId) {
+      draggedTask.category = destination.droppableId;
+    }
+
+    // Insert the task at its new position
+    newTasks.splice(destination.index, 0, draggedTask);
+
+    // Update the local state
+    setTasks(newTasks);
+
+    // Update the backend
+    try {
+      await fetch(
+        `${import.meta.env.VITE_SERVER_URL}/task/reorder/${draggableId}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            category: draggedTask.category,
+            index: destination.index,
+          }),
+        }
+      );
+    } catch (error) {
+      console.error('Error updating task:', error);
+      // Revert the local state change if the server update fails
+      fetchTasks();
     }
   };
 
-  return (
-    <div className="bgColor flex flex-col items-center min-h-screen p-6">
-      {/* Header */}
-      <h1 className="text-2xl font-bold mb-6 text-white">
-        Task Management System
-      </h1>
+  // Handle Input Change
+  const handleInputChange = e => {
+    setNewTask({ ...newTask, [e.target.name]: e.target.value });
+  };
 
-      {/* Task Add Section */}
-      <div className="row mb-6">
+  // Add New Task
+  const handleAddTask = async () => {
+    if (!newTask.title.trim()) return;
+
+    try {
+      const response = await fetch(`http://localhost:5000/task`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newTask),
+      });
+
+      if (response.ok) {
+        fetchTasks();
+        setNewTask({ title: '', description: '', category: 'To-Do' });
+      }
+    } catch (error) {
+      console.error('Error adding task:', error);
+    }
+  };
+
+  // Delete Task
+  const handleDeleteTask = async taskId => {
+    try {
+      await fetch(`${import.meta.env.VITE_SERVER_URL}/task/${taskId}`, {
+        method: 'DELETE',
+      });
+      setTasks(tasks.filter(task => task._id !== taskId));
+    } catch (error) {
+      console.error('Error deleting task:', error);
+    }
+  };
+
+  // Enable Edit Mode
+  const handleEditTask = task => {
+    setEditingTask(task);
+  };
+
+  // Save Updated Task
+  const handleSaveTask = async (taskId, updatedTask) => {
+    // eslint-disable-next-line no-unused-vars
+    const { _id, ...taskToUpdate } = updatedTask;
+
+    try {
+      await fetch(`${import.meta.env.VITE_SERVER_URL}/task/${taskId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(taskToUpdate),
+      });
+
+      setEditingTask(null);
+      fetchTasks();
+    } catch (error) {
+      console.error('Error updating task:', error);
+    }
+  };
+
+  // Format date to a readable format
+  const formatDate = date => {
+    const d = new Date(date);
+    return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+  };
+  // console.log(tasks);
+  return (
+    <div className="container mx-auto p-5">
+      {/* Task Input Form */}
+      <div className="mb-5 flex flex-wrap gap-3">
         <input
           type="text"
-          id="input-box"
-          name="task"
-          placeholder="Add your task"
-          className="p-2 border rounded"
-          value={taskInput} // Bind the value to the state
-          onChange={e => setTaskInput(e.target.value)} // Update the state on input change
+          name="title"
+          placeholder="Task Title"
+          value={newTask.title}
+          onChange={handleInputChange}
+          className="p-2 border rounded-md"
         />
-        <button
-          onClick={addTask}
-          className="button ml-4 p-2 bg-blue-500 text-white rounded"
+        <input
+          type="text"
+          name="description"
+          placeholder="Description"
+          value={newTask.description}
+          onChange={handleInputChange}
+          className="p-2 border rounded-md"
+        />
+        <select
+          name="category"
+          value={newTask.category}
+          onChange={handleInputChange}
+          className="p-2 border rounded-md"
         >
-          Add
+          {categories.map(cat => (
+            <option key={cat} value={cat}>
+              {cat}
+            </option>
+          ))}
+        </select>
+        <button
+          onClick={handleAddTask}
+          className="bg-blue-500 text-white px-4 py-2 rounded-md"
+        >
+          Add Task
         </button>
       </div>
 
-      {/* Task Columns */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-5xl">
-        {/* To-Do Column */}
-        <div className="bg-[#edeef0] p-4 rounded-lg shadow-lg w-full">
-          <h2 className="text-lg font-semibold text-center mb-2">To-Do</h2>
-          <div className="min-h-[300px] border-2 border-blue-700 border-dashed p-2 rounded-lg">
-            {tasks.todo.map((task, index) => (
-              <div key={index} className="p-2 mb-2 bg-white rounded shadow">
-                {task}
-              </div>
-            ))}
-          </div>
-        </div>
+      {/* Drag & Drop Task Board */}
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {categories.map(category => (
+            <Droppable key={category} droppableId={category}>
+              {provided => (
+                <div
+                  ref={provided.innerRef}
+                  {...provided.droppableProps}
+                  className="p-4 border rounded-md shadow-md bg-gray-100 min-h-[300px]"
+                >
+                  <h2 className="text-lg font-semibold mb-2">{category}</h2>
+                  {tasks
+                    .filter(task => task.category === category)
+                    .map((task, index) => (
+                      <Draggable
+                        key={task._id}
+                        draggableId={task._id}
+                        index={index}
+                      >
+                        {provided => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
+                            className="bg-white p-3 mb-2 shadow-md rounded-md flex justify-between items-center"
+                          >
+                            {/* Task Details */}
+                            {editingTask?._id === task._id ? (
+                              <div className="flex flex-col gap-2 w-full">
+                                <input
+                                  type="text"
+                                  value={editingTask.title}
+                                  onChange={e =>
+                                    setEditingTask({
+                                      ...editingTask,
+                                      title: e.target.value,
+                                    })
+                                  }
+                                  className="border p-1 rounded-md"
+                                />
+                                <input
+                                  type="text"
+                                  value={editingTask.description}
+                                  onChange={e =>
+                                    setEditingTask({
+                                      ...editingTask,
+                                      description: e.target.value,
+                                    })
+                                  }
+                                  className="border p-1 rounded-md"
+                                />
+                              </div>
+                            ) : (
+                              <div className="flex-1">
+                                <h3 className="font-semibold">{task.title}</h3>
+                                <p className="text-sm text-gray-600">
+                                  {task.description}
+                                </p>
+                                <p className="text-xs text-gray-400">
+                                  {formatDate(task.createdAt)}
+                                </p>
+                              </div>
+                            )}
 
-        {/* In Progress Column */}
-        <div className="bg-[#edeef0] p-4 rounded-lg shadow-lg w-full">
-          <h2 className="text-lg font-semibold text-center mb-2">
-            In Progress
-          </h2>
-          <div className="min-h-[300px] border-2 border-purple-700 border-dashed p-2 rounded-lg">
-            {tasks.inProgress.map((task, index) => (
-              <div key={index} className="p-2 mb-2 bg-white rounded shadow">
-                {task}
-              </div>
-            ))}
-          </div>
+                            {/* Action Buttons */}
+                            <div className="flex gap-2">
+                              {editingTask?._id === task._id ? (
+                                <FiCheck
+                                  className="cursor-pointer text-green-500"
+                                  onClick={() =>
+                                    handleSaveTask(task._id, editingTask)
+                                  }
+                                  size={18}
+                                />
+                              ) : (
+                                <FiEdit
+                                  className="cursor-pointer text-blue-500"
+                                  onClick={() => handleEditTask(task)}
+                                  size={18}
+                                />
+                              )}
+                              <FiTrash2
+                                className="cursor-pointer text-red-500"
+                                onClick={() => handleDeleteTask(task._id)}
+                                size={18}
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </Draggable>
+                    ))}
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
+          ))}
         </div>
-
-        {/* Done Column */}
-        <div className="bg-[#edeef0] p-4 rounded-lg shadow-lg w-full">
-          <h2 className="text-lg font-semibold text-center mb-2">Done</h2>
-          <div className="min-h-[300px] border-2 border-blue-700 border-dashed p-2 rounded-lg">
-            {tasks.done.map((task, index) => (
-              <div key={index} className="p-2 mb-2 bg-white rounded shadow">
-                {task}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+      </DragDropContext>
     </div>
   );
 };
