@@ -15,7 +15,9 @@ const TaskBoard = () => {
   // Fetch tasks from server
   const fetchTasks = useCallback(async () => {
     try {
-      const response = await fetch(`http://localhost:5000/task`);
+      const response = await fetch(
+        `https://task-management-server-beta-seven.vercel.app/task`
+      );
       const data = await response.json();
       if (Array.isArray(data)) {
         setTasks(data);
@@ -75,14 +77,17 @@ const TaskBoard = () => {
 
     // Update the backend
     try {
-      await fetch(`http://localhost:5000/task/reorder/${draggableId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          category: draggedTask.category,
-          index: destination.index,
-        }),
-      });
+      await fetch(
+        `https://task-management-server-beta-seven.vercel.app/task/reorder/${draggableId}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            category: draggedTask.category,
+            index: destination.index,
+          }),
+        }
+      );
     } catch (error) {
       console.error('Error updating task:', error);
       // Revert the local state change if the server update fails
@@ -100,11 +105,14 @@ const TaskBoard = () => {
     if (!newTask.title.trim()) return;
 
     try {
-      const response = await fetch(`http://localhost:5000/task`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newTask),
-      });
+      const response = await fetch(
+        `https://task-management-server-beta-seven.vercel.app/task`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newTask),
+        }
+      );
 
       if (response.ok) {
         fetchTasks();
@@ -118,9 +126,12 @@ const TaskBoard = () => {
   // Delete Task
   const handleDeleteTask = async taskId => {
     try {
-      await fetch(`http://localhost:5000/task/${taskId}`, {
-        method: 'DELETE',
-      });
+      await fetch(
+        `https://task-management-server-beta-seven.vercel.app/task/${taskId}`,
+        {
+          method: 'DELETE',
+        }
+      );
       setTasks(tasks.filter(task => task._id !== taskId));
     } catch (error) {
       console.error('Error deleting task:', error);
@@ -138,11 +149,14 @@ const TaskBoard = () => {
     const { _id, ...taskToUpdate } = updatedTask;
 
     try {
-      await fetch(`http://localhost:5000/task/${taskId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(taskToUpdate),
-      });
+      await fetch(
+        `https://task-management-server-beta-seven.vercel.app/task/${taskId}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(taskToUpdate),
+        }
+      );
 
       setEditingTask(null);
       fetchTasks();
